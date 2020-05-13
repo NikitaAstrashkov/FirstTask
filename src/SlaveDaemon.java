@@ -2,8 +2,8 @@ class SlaveDaemon extends Thread {
     @Override
     public void run() {
         while (true) {
-            if (main.FileHandlerSample.checkIfPathsValid())
-                main.FileHandlerSample.fileParsing();
+            if (main.fileHandlerSample.checkIfPathsValid())
+                main.fileHandlerSample.fileParsing();
             else
             {
                 try {
