@@ -1,6 +1,6 @@
 package here.you.are;
 
-public enum INPUT_FILE_CHECK {
+public enum InputFileCheck {
     BOTH_FILES_EXISTS,
     OUTPUT_FILE_MADE,
     OUTPUT_FILE_N_MADE,

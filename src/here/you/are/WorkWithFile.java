@@ -9,11 +9,18 @@ class WorkWithFile implements Runnable
 {
     private File inputFile;
     private File outputFile;
+    private boolean parserThreadCreated = false;
     private int parserIndex;
+    private boolean parsingCompleted;
+    private CompleteReporter pairedReporter;
 
     @Override
     public void run() {
         fileParsing();
+    }
+
+    public WorkWithFile(CompleteReporter reporterSample) {
+        this.pairedReporter = reporterSample;
     }
 
     protected void setParserIndex(int newIndex) {
@@ -28,11 +35,12 @@ class WorkWithFile implements Runnable
     protected void fileParsing() {
         int wordsCount = countWordsInFile();
         writeToFile(wordsCount);
+
     }
 
     private int countWordsInFile() {
         int wordsCount = 0;
-        FileReader inputFileReader = null;
+        FileReader inputFileReader;
         try {
             inputFileReader = new FileReader(inputFile);
             BufferedReader reader = new BufferedReader(inputFileReader);
@@ -55,19 +63,38 @@ class WorkWithFile implements Runnable
     }
 
     private void writeToFile(int wordsCounted) {
-        FileWriter outputFileWriter = null;
+        FileWriter outputFileWriter;
         try {
             outputFileWriter = new FileWriter(outputFile);
             outputFileWriter.write(Integer.toString(wordsCounted));
             outputFileWriter.close();
-            reportParsingCompleted();
+            throwInfoForReport();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void reportParsingCompleted() {
-        System.out.println(String.format("Thread #%d finished.%nResult of parsing file %s saved at path %s", parserIndex, inputFile.getPath(), outputFile.getPath()));
+    private void throwInfoForReport() {
+        pairedReporter.setFileIndex(parserIndex);
+        pairedReporter.setInputPath(inputFile.getPath());
+        pairedReporter.setOutputPath(outputFile.getPath());
+        pairedReporter.setParsingCompleted(true);
+    }
+
+    public boolean isParserThreadCreated() {
+        return parserThreadCreated;
+    }
+
+    public void setParserThreadCreated(boolean parserCreated) {
+        this.parserThreadCreated = parserCreated;
+    }
+
+    public boolean isParsingCompleted() {
+        return parsingCompleted;
+    }
+
+    public void setParsingCompleted(boolean parsingCompleted) {
+        this.parsingCompleted = parsingCompleted;
     }
 }
 

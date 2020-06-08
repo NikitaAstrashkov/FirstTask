@@ -3,6 +3,7 @@ package here.you.are;
 import java.util.Scanner;
 
 public class UI {
+    private boolean uiClosed = false;
     private FileParsersHandler fileParsersHandler;
     public UI(FileParsersHandler fileParsersHandler) {
         this.fileParsersHandler = fileParsersHandler;
@@ -16,17 +17,19 @@ public class UI {
             System.out.print("Enter output file: ");
             String outFilePath = inputScanner.nextLine();
 
-            INPUT_FILE_CHECK checkResult = fileParsersHandler.tryFilePaths(inFilePath, outFilePath);
+            InputFileCheck checkResult = fileParsersHandler.tryFilePaths(inFilePath, outFilePath);
             if (!checkPathsResult(checkResult, outFilePath)) {
                 continue;
             }
 
             int parserIndex = fileParsersHandler.addNewFileParser(inFilePath, outFilePath);
             System.out.println(String.format("Parsing thread %d started successfully, wait for result or...", parserIndex));
+            if (uiClosed)
+                break;
         }
     }
 
-    private boolean checkPathsResult(INPUT_FILE_CHECK result, String outFilePath) {
+    private boolean checkPathsResult(InputFileCheck result, String outFilePath) {
         boolean ret = false;
         switch(result) {
             case BOTH_FILES_EXISTS: {

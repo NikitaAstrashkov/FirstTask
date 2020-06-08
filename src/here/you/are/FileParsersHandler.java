@@ -2,20 +2,17 @@ package here.you.are;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-import static here.you.are.INPUT_FILE_CHECK.BOTH_FILES_EXISTS;
-import static here.you.are.INPUT_FILE_CHECK.OUTPUT_FILE_MADE;
-import static here.you.are.INPUT_FILE_CHECK.OUTPUT_FILE_N_MADE;
-import static here.you.are.INPUT_FILE_CHECK.INPUT_FILE_N_EXIST;
-import static here.you.are.INPUT_FILE_CHECK.OUTPUT_FILE_N_EXIST;
+import static here.you.are.InputFileCheck.BOTH_FILES_EXISTS;
+import static here.you.are.InputFileCheck.OUTPUT_FILE_MADE;
+import static here.you.are.InputFileCheck.OUTPUT_FILE_N_MADE;
+import static here.you.are.InputFileCheck.INPUT_FILE_N_EXIST;
+import static here.you.are.InputFileCheck.OUTPUT_FILE_N_EXIST;
 
 class FileParsersHandler extends Thread {
-    private boolean parserCreated = false;
-    private int lastParserIndex = 0;
-    private ArrayList<WorkWithFile> fileParsingProcesses = new ArrayList<>();
-
-    private ArrayList<Thread> currentParsingThreads = new ArrayList<>();
+    private Map<WorkWithFile, CompleteReporter> fileParsingProcesses = new HashMap<>();
 
     @Override
     public void run() {
@@ -23,39 +20,40 @@ class FileParsersHandler extends Thread {
         parsersHandler();
     }
 
-    protected int addNewFileParser(String inFilePath, String outFilePath) {
-        fileParsingProcesses.add(new WorkWithFile());
-        lastParserIndex = fileParsingProcesses.size();
-        WorkWithFile newFileParser = fileParsingProcesses.get(lastParserIndex - 1);
-        newFileParser.setParserIndex(lastParserIndex);
+    protected int addNewFileParser(String inFilePath, String outFilePath) { // Добавление нового потока-обработчика файла
+        CompleteReporter newCompleteReporter = new CompleteReporter();
+        WorkWithFile newFileParser = new WorkWithFile(newCompleteReporter);
+        fileParsingProcesses.put(newFileParser, newCompleteReporter);
+        int parserIndex = fileParsingProcesses.size();
+        newFileParser.setParserIndex(parserIndex);
         newFileParser.setFilePaths(inFilePath, outFilePath);
-        parserCreated = true;
-        return lastParserIndex;
+        return parserIndex;
     }
 
     private void parsersHandler(){
         while (true) {
-            if (parserCreated)
-            {
-                fileParsingProcesses.trimToSize();
-                WorkWithFile startingParser = fileParsingProcesses.get(lastParserIndex - 1);
-                Thread newThread = new Thread(startingParser);
-                currentParsingThreads.add(newThread);
-                newThread.start();
-                parserCreated = false;
-            }
-            else {
-                try {
-                    sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            for (Map.Entry<WorkWithFile, CompleteReporter> entry : fileParsingProcesses.entrySet()) {
+                WorkWithFile parser = entry.getKey();
+                if (!(parser.isParserThreadCreated())) { // Если поток ещё не создан -
+                    Thread newParserThread = new Thread(parser);
+                    Thread newReporterThread = new Thread(entry.getValue());
+                    newParserThread.start();
+                    newReporterThread.start();
+                    parser.setParserThreadCreated(true);
                 }
             }
+
+            try {
+                sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
-    protected INPUT_FILE_CHECK tryFilePaths(String inputFilePath, String outputFilePath) {
-        INPUT_FILE_CHECK ret;
+    protected InputFileCheck tryFilePaths(String inputFilePath, String outputFilePath) {
+        InputFileCheck ret;
         File inputFile = new File(inputFilePath);
         if (!(inputFile.exists()))
             return INPUT_FILE_N_EXIST;
